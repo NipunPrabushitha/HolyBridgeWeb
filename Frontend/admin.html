@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HolyBridge - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-bg: #1a1a2e;
+            --sidebar-hover: #16213e;
+            --primary-color: #4e73df;
+            --success-color: #1cc88a;
+            --info-color: #36b9cc;
+            --warning-color: #f6c23e;
+            --danger-color: #e74a3b;
+            --body-bg: #f8f9fc;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --topbar-bg: #ffffff;
+            --sidebar-text: rgba(255, 255, 255, 0.8);
+        }
+
+        [data-theme="dark"] {
+            --body-bg: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #f0f0f0;
+            --topbar-bg: #2d2d2d;
+            --sidebar-text: rgba(255, 255, 255, 0.8);
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--body-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar {
+            height: 100vh;
+            width: 250px;
+            background: var(--sidebar-bg);
+            color: white;
+            position: fixed;
+            transition: all 0.3s;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+
+        .sidebar-brand {
+            height: 4.375rem;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 800;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            letter-spacing: 0.05rem;
+            z-index: 1;
+        }
+
+        .sidebar-divider {
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            margin: 0 1rem 1rem;
+        }
+
+        .sidebar-item {
+            position: relative;
+        }
+
+        .sidebar-link {
+            padding: 0.75rem 1rem;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .sidebar-link:hover {
+            color: white;
+            background-color: var(--sidebar-hover);
+        }
+
+        .sidebar-link i {
+            margin-right: 0.5rem;
+        }
+
+        .sidebar-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            min-height: 100vh;
+            transition: all 0.3s;
+        }
+
+        .topbar {
+            height: 4.375rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            background-color: var(--topbar-bg);
+            transition: background-color 0.3s;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            transition: transform 0.3s, background-color 0.3s;
+            background-color: var(--card-bg);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .activity-feed {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .feed-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .feed-item:last-child {
+            border-bottom: none;
+        }
+
+        .feed-item .date {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+
+        .feed-item .text {
+            margin-top: 0.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-left: -250px;
+            }
+            .content {
+                width: 100%;
+                margin-left: 0;
+            }
+            .sidebar.active {
+                margin-left: 0;
+            }
+            .content.active {
+                margin-left: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="d-flex">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-brand d-flex align-items-center justify-content-center">
+            <i class="fas fa-church me-2"></i>
+            <span>HolyBridge</span>
+        </div>
+        <div class="sidebar-divider"></div>
+
+        <!-- Update your sidebar navigation -->
+        <div class="sidebar-item">
+            <a href="#dashboard" class="sidebar-link active">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="#users" class="sidebar-link">
+                <i class="fas fa-fw fa-user"></i>
+                <span>Users</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="#members" class="sidebar-link">
+                <i class="fas fa-fw fa-users"></i>
+                <span>Members</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="#dues" class="sidebar-link">
+                <i class="fas fa-fw fa-hand-holding-usd"></i>
+                <span>Dues</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="#categories" class="sidebar-link">
+                <i class="fas fa-fw fa-tags"></i>
+                <span>Categories</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="#dioceses" class="sidebar-link">
+                <i class="fas fa-fw fa-church"></i>
+                <span>Dioceses</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="#parishes" class="sidebar-link">
+                <i class="fas fa-fw fa-place-of-worship"></i>
+                <span>Parishes</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="#donations" class="sidebar-link">
+                <i class="fas fa-fw fa-donate"></i>
+                <span>Donations</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="#reports" class="sidebar-link">
+                <i class="fas fa-fw fa-chart-bar"></i>
+                <span>Reports</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="#settings" class="sidebar-link">
+                <i class="fas fa-fw fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content" id="content">
+        <!-- Topbar -->
+        <nav class="navbar navbar-expand topbar mb-4 static-top shadow">
+            <button class="btn btn-link d-md-none rounded-circle me-3" id="sidebarToggle">
+                <i class="fa fa-bars"></i>
+            </button>
+
+            <!-- Topbar Navbar -->
+            <ul class="navbar-nav ms-auto">
+                <!-- Theme Toggle -->
+                <li class="nav-item">
+                    <div class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon" id="themeIcon"></i>
+                    </div>
+                </li>
+
+                <!-- Nav Item - User Information -->
+                <li class="nav-item dropdown no-arrow">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                        <div class="user-dropdown">
+                            <span class="me-2 d-none d-lg-inline text-gray-600" id="adminEmail"></span>
+                            <span class="badge bg-primary me-2" id="userRoleBadge">Admin</span>
+                            <img class="img-profile rounded-circle" src="https://source.unsplash.com/QAB-WJcbgJk/60x60" width="32" height="32">
+                        </div>
+                    </a>
+                    <!-- Dropdown - User Information -->
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                        <div class="dropdown-header d-flex align-items-center">
+                            <img class="img-profile rounded-circle mr-2" src="https://source.unsplash.com/QAB-WJcbgJk/60x60" width="40" height="40">
+                            <div>
+                                <div class="fw-bold" id="dropdownUserName">Admin User</div>
+                                <div class="small text-muted" id="dropdownUserEmail"></div>
+                                <div class="small text-muted" id="dropdownUserRole"></div>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="profile.html">
+                            <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                            Profile
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                            Logout
+                        </a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Begin Page Content -->
+        <div class="container-fluid" id="main-content">
+            <!-- Page Heading -->
+            <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                <h1 class="h3 mb-0 text-gray-800">Admin Dashboard</h1>
+                <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" id="generateReportBtn">
+                    <i class="fas fa-download fa-sm text-white-50"></i> Generate Report
+                </a>
+            </div>
+
+            <!-- Content Row -->
+            <div class="row">
+                <!-- Users Card -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Users</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="usersCount">Loading...</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Donations Card -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Total Donations</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="donationsAmount">Loading...</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Events Card -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Upcoming Events</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="eventsCount">Loading...</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback Card -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Pending Feedback</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="feedbackCount">Loading...</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-comments fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Row -->
+            <div class="row">
+                <!-- Recent Activity -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                            <button class="btn btn-sm btn-primary" id="refreshActivityBtn">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="activity-feed" id="recentActivity">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <button class="btn btn-primary w-100" id="addUserBtn">
+                                        <i class="fas fa-user-plus me-2"></i> Add User
+                                    </button>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <button class="btn btn-success w-100" id="createEventBtn">
+                                        <i class="fas fa-calendar-plus me-2"></i> Create Event
+                                    </button>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <button class="btn btn-info w-100" id="exportDataBtn">
+                                        <i class="fas fa-file-export me-2"></i> Export Data
+                                    </button>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <button class="btn btn-warning w-100" id="settingsBtn">
+                                        <i class="fas fa-cog me-2"></i> Settings
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Users Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">Recent Users</h6>
+                            <a href="users.html" class="btn btn-sm btn-primary">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="recentUsersTable" width="100%" cellspacing="0">
+                                    <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap core JavaScript-->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom scripts -->
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<!-- Add this right before the closing </body> tag -->
+<script src="js/navigation.js"></script>
+<script src="js/dynamic-content.js"></script>
+</body>
+</html>
