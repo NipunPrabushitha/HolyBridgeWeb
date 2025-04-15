@@ -1,4 +1,5 @@
 // dynamic-content.js
+
 document.addEventListener('DOMContentLoaded', function() {
     // Main content area where we'll load our dynamic content
     const mainContent = document.getElementById('main-content');
@@ -186,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ======================
-    // USERS CONTENT (from your old file)
+    // USERS CONTENT
     // ======================
     function loadUsers() {
         document.title = 'HolyBridge - User Management';
@@ -520,19 +521,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="col-lg-4">
                         <div class="card shadow mb-4">
                             <div class="card-header py-3">
-                                <h6 class="m-0 font-weight-bold text-primary">Add New Category</h6>
+                                <h6 class="m-0 font-weight-bold text-primary">Add/Edit Category</h6>
                             </div>
                             <div class="card-body">
                                 <form id="categoryForm">
+                                    <input type="hidden" id="categoryId">
                                     <div class="form-group">
-                                        <label>Category Name</label>
+                                        <label>Category Name *</label>
                                         <input type="text" class="form-control" id="categoryName" required>
                                     </div>
                                     <div class="form-group">
                                         <label>Description</label>
                                         <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
                                     </div>
-                                    <button type="submit" class="btn btn-primary">Save Category</button>
+                                    <button type="submit" class="btn btn-primary mr-2" id="saveCategoryBtn">Save</button>
+                                    <button type="button" class="btn btn-secondary" id="cancelEditBtn" style="display:none;">Cancel</button>
                                 </form>
                             </div>
                         </div>
@@ -541,11 +544,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="card shadow mb-4">
                             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                                 <h6 class="m-0 font-weight-bold text-primary">All Categories</h6>
-                                <input type="text" class="form-control form-control-sm" style="width: 200px;" placeholder="Search categories..." id="categorySearch">
+                                <input type="text" class="form-control form-control-sm" style="width: 200px;" placeholder="Search..." id="categorySearch">
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-bordered" id="categoriesTable" width="100%" cellspacing="0">
+                                    <table class="table table-bordered" width="100%" cellspacing="0">
                                         <thead>
                                             <tr>
                                                 <th>ID</th>
@@ -558,7 +561,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <tr>
                                                 <td colspan="4" class="text-center">
                                                     <div class="spinner-border text-primary" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
+                                                        <span class="sr-only">Loading...</span>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -572,13 +575,126 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
 
-        // Load categories data
+        // Load initial data
         fetchCategories();
 
-        // Add event listeners
-        document.getElementById('categoryForm')?.addEventListener('submit', saveCategory);
+        // Set up event listeners
+        document.getElementById('addCategoryBtn')?.addEventListener('click', resetCategoryForm);
+        document.getElementById('categoryForm')?.addEventListener('submit', handleCategorySubmit);
+        document.getElementById('cancelEditBtn')?.addEventListener('click', resetCategoryForm);
         document.getElementById('categorySearch')?.addEventListener('input', searchCategories);
     }
+
+    async function handleCategorySubmit(e) {
+        e.preventDefault();
+
+        // Get authentication token
+        const token = getAuthToken();
+        if (!token) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Authentication Failed',
+                text: 'Please login again',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                window.location.href = 'login.html';
+            });
+            return;
+        }
+
+        // Get form elements
+        const saveBtn = document.getElementById('saveCategoryBtn');
+        const categoryId = document.getElementById('categoryId').value;
+        const categoryName = document.getElementById('categoryName').value.trim();
+        const categoryDescription = document.getElementById('categoryDescription').value.trim();
+
+        // Validate required fields
+        if (!categoryName) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: 'Category name is required',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
+        // Prepare request data
+        const requestData = {
+            name: categoryName,
+            description: categoryDescription
+        };
+
+        // Show loading state
+        const originalBtnText = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+        try {
+            // Determine if this is an update or create operation
+            const isUpdate = categoryId !== '';
+            const url = `${API_BASE_URL}/category/${isUpdate ? 'update' : 'save'}`;
+            const method = isUpdate ? 'PUT' : 'POST';
+
+            // If updating, add the ID to the request data
+            if (isUpdate) {
+                requestData.categoryId = categoryId;
+            }
+
+            // Make API request
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            // Handle response
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Failed to ${isUpdate ? 'update' : 'create'} category`);
+            }
+
+            // Show success message
+            await Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: `Category ${isUpdate ? 'updated' : 'created'} successfully!`,
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            // Reset form and refresh table
+            resetCategoryForm();
+            await fetchCategories();
+
+        } catch (error) {
+            console.error('Category operation error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Operation Failed',
+                text: error.message || 'An error occurred while processing your request',
+                confirmButtonText: 'OK'
+            });
+        } finally {
+            // Restore button state
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnText;
+        }
+    }
+
+    function resetCategoryForm() {
+        document.getElementById('categoryForm').reset();
+        document.getElementById('categoryId').value = '';
+        document.getElementById('cancelEditBtn').style.display = 'none';
+    }
+
+
+
+
+
 
     // ======================
     // DIOCESES CONTENT
@@ -754,7 +870,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ======================
-    // DONATIONS CONTENT (from your old file)
+    // DONATIONS CONTENT
     // ======================
     function loadDonations() {
         document.title = 'HolyBridge - Donation Management';
@@ -920,360 +1036,388 @@ document.addEventListener('DOMContentLoaded', function() {
     function fetchDashboardData() {
         // In a real app, these would be API calls
         setTimeout(() => {
-            // Mock data
-            document.getElementById('membersCount').textContent = '125';
-            document.getElementById('duesAmount').textContent = '$1,250.00';
-            document.getElementById('donationsAmount').textContent = '$3,450.00';
-            document.getElementById('parishesCount').textContent = '8';
-
             // Recent activity
-            const activities = [
-                { date: '2023-06-15 10:30', text: 'John Doe paid monthly dues ($10.00)' },
-                { date: '2023-06-14 15:45', text: 'New member registered: Jane Smith' },
-                { date: '2023-06-14 09:20', text: 'Robert Johnson made a donation ($50.00)' },
-                { date: '2023-06-13 14:10', text: 'Updated parish information for St. Mary' }
-            ];
-
             const activityFeed = document.getElementById('recentActivity');
             activityFeed.innerHTML = '';
 
-            activities.forEach(activity => {
-                const item = document.createElement('div');
-                item.className = 'feed-item';
-                item.innerHTML = `
-                    <div class="date">${activity.date}</div>
-                    <div class="text">${activity.text}</div>
-                `;
-                activityFeed.appendChild(item);
-            });
+            activityFeed.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        No recent activity found
+                    </td>
+                </tr>
+            `;
         }, 1000);
     }
 
     function fetchUsers() {
-        // Mock data
         setTimeout(() => {
-            const users = [
-                { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin', joined: '2023-01-15' },
-                { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'User', joined: '2023-02-20' },
-                { id: 3, name: 'Robert Johnson', email: 'robert@example.com', role: 'User', joined: '2023-03-10' }
-            ];
-
             const tbody = document.getElementById('usersTableBody');
-            tbody.innerHTML = '';
-
-            users.forEach(user => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${user.name}</td>
-                    <td>${user.email}</td>
-                    <td><span class="badge ${user.role === 'Admin' ? 'bg-primary' : 'bg-secondary'}">${user.role}</span></td>
-                    <td>${new Date(user.joined).toLocaleDateString()}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1 edit-user" data-id="${user.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger delete-user" data-id="${user.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        No users found
                     </td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            // Add event listeners to action buttons
-            document.querySelectorAll('.edit-user').forEach(btn => {
-                btn.addEventListener('click', () => editUser(btn.dataset.id));
-            });
-
-            document.querySelectorAll('.delete-user').forEach(btn => {
-                btn.addEventListener('click', () => deleteUser(btn.dataset.id));
-            });
+                </tr>
+            `;
         }, 1000);
     }
 
     function fetchMembers() {
-        // Mock data
         setTimeout(() => {
-            const members = [
-                { id: 1, firstName: 'John', lastName: 'Doe', phone: '555-1234', email: 'john@example.com', category: 'Regular', parish: 'St. Mary', status: 'Active' },
-                { id: 2, firstName: 'Jane', lastName: 'Smith', phone: '555-5678', email: 'jane@example.com', category: 'Youth', parish: 'St. Peter', status: 'Active' },
-                { id: 3, firstName: 'Robert', lastName: 'Johnson', phone: '555-9012', email: 'robert@example.com', category: 'Senior', parish: 'St. Paul', status: 'Inactive' }
-            ];
-
             const tbody = document.getElementById('membersTableBody');
-            tbody.innerHTML = '';
-
-            members.forEach(member => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${member.id}</td>
-                    <td>${member.firstName} ${member.lastName}</td>
-                    <td>${member.phone}</td>
-                    <td>${member.email}</td>
-                    <td>${member.category}</td>
-                    <td>${member.parish}</td>
-                    <td><span class="badge ${member.status === 'Active' ? 'bg-success' : 'bg-secondary'}">${member.status}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1 edit-member" data-id="${member.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger delete-member" data-id="${member.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-muted">
+                        No members found
                     </td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            // Add event listeners
-            document.querySelectorAll('.edit-member').forEach(btn => {
-                btn.addEventListener('click', () => editMember(btn.dataset.id));
-            });
-
-            document.querySelectorAll('.delete-member').forEach(btn => {
-                btn.addEventListener('click', () => deleteMember(btn.dataset.id));
-            });
+                </tr>
+            `;
         }, 1000);
     }
 
     function fetchDues() {
-        // Mock data
         setTimeout(() => {
-            const dues = [
-                { id: 1, member: 'John Doe', amount: 10.00, datePaid: '2023-06-15', month: 6, year: 2023, method: 'Cash' },
-                { id: 2, member: 'Jane Smith', amount: 10.00, datePaid: '2023-06-10', month: 6, year: 2023, method: 'Mobile Money' },
-                { id: 3, member: 'Robert Johnson', amount: 10.00, datePaid: '2023-05-20', month: 5, year: 2023, method: 'Bank Transfer' }
-            ];
-
             const tbody = document.getElementById('duesTableBody');
-            tbody.innerHTML = '';
-
-            dues.forEach(due => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${due.id}</td>
-                    <td>${due.member}</td>
-                    <td>$${due.amount.toFixed(2)}</td>
-                    <td>${new Date(due.datePaid).toLocaleDateString()}</td>
-                    <td>${getMonthName(due.month)}</td>
-                    <td>${due.year}</td>
-                    <td>${due.method}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1 edit-due" data-id="${due.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger delete-due" data-id="${due.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-muted">
+                        No dues records found
                     </td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            // Add event listeners
-            document.querySelectorAll('.edit-due').forEach(btn => {
-                btn.addEventListener('click', () => editDue(btn.dataset.id));
-            });
-
-            document.querySelectorAll('.delete-due').forEach(btn => {
-                btn.addEventListener('click', () => deleteDue(btn.dataset.id));
-            });
+                </tr>
+            `;
         }, 1000);
     }
 
     function fetchDonations() {
-        // In a real app, this would be an API call
         setTimeout(() => {
-            const donations = [
-                { id: 1, donor: 'John Doe', amount: 100.50, date: '2023-06-15', note: 'Monthly tithe' },
-                { id: 2, donor: 'Jane Smith', amount: 50.00, date: '2023-06-10', note: 'Building fund' },
-                { id: 3, donor: 'Robert Johnson', amount: 200.00, date: '2023-05-20', note: 'Special offering' }
-            ];
-
             const tbody = document.getElementById('donationsTableBody');
-            tbody.innerHTML = '';
-
-            // Update stats
-            const totalCount = donations.length;
-            const totalAmount = donations.reduce((sum, d) => sum + d.amount, 0);
-            const monthlyAmount = donations
-                .filter(d => new Date(d.date).getMonth() === new Date().getMonth())
-                .reduce((sum, d) => sum + d.amount, 0);
-            const averageAmount = totalCount > 0 ? totalAmount / totalCount : 0;
-
-            document.getElementById('totalDonationsCount').textContent = totalCount;
-            document.getElementById('totalDonationsAmount').textContent = `$${totalAmount.toFixed(2)}`;
-            document.getElementById('monthlyDonationsAmount').textContent = `$${monthlyAmount.toFixed(2)}`;
-            document.getElementById('averageDonationAmount').textContent = `$${averageAmount.toFixed(2)}`;
-
-            // Populate table
-            donations.forEach(donation => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${donation.id}</td>
-                    <td>${donation.donor}</td>
-                    <td>$${donation.amount.toFixed(2)}</td>
-                    <td>${new Date(donation.date).toLocaleDateString()}</td>
-                    <td>${donation.note || '--'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1 edit-donation" data-id="${donation.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger delete-donation" data-id="${donation.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        No donations found
                     </td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            // Add event listeners to action buttons
-            document.querySelectorAll('.edit-donation').forEach(btn => {
-                btn.addEventListener('click', () => editDonation(btn.dataset.id));
-            });
-
-            document.querySelectorAll('.delete-donation').forEach(btn => {
-                btn.addEventListener('click', () => deleteDonation(btn.dataset.id));
-            });
+                </tr>
+            `;
         }, 1000);
     }
 
-    function fetchCategories() {
-        // Mock data
-        setTimeout(() => {
-            const categories = [
-                { id: 1, name: 'Regular', description: 'Regular church members' },
-                { id: 2, name: 'Youth', description: 'Youth group members' },
-                { id: 3, name: 'Senior', description: 'Senior citizens group' }
-            ];
 
-            const tbody = document.getElementById('categoriesTableBody');
-            tbody.innerHTML = '';
 
-            categories.forEach(category => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${category.id}</td>
-                    <td>${category.name}</td>
-                    <td>${category.description}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1 edit-category" data-id="${category.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger delete-category" data-id="${category.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
+    ////////////////////////////////////////////////////////////////////////////////////////
+    //CATEGORIES
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    async function fetchCategories() {
+        const token = getAuthToken();
+        if (!token) {
+            console.error('No authentication token found');
+            return;
+        }
+
+        const tableBody = document.getElementById('categoriesTableBody');
+        tableBody.innerHTML = `
+    <tr>
+        <td colspan="4" class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </td>
+    </tr>
+    `;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/category/getAll`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
-            // Add event listeners
-            document.querySelectorAll('.edit-category').forEach(btn => {
-                btn.addEventListener('click', () => editCategory(btn.dataset.id));
-            });
+            if (!response.ok) {
+                throw new Error('Failed to fetch categories');
+            }
 
-            document.querySelectorAll('.delete-category').forEach(btn => {
-                btn.addEventListener('click', () => deleteCategory(btn.dataset.id));
-            });
-        }, 1000);
+            const categories = await response.json();
+            renderCategoriesTable(categories);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+            tableBody.innerHTML = `
+        <tr>
+            <td colspan="4" class="text-center text-danger">
+                Error loading categories: ${error.message}
+            </td>
+        </tr>
+    `;
+        }
     }
+
+    function renderCategoriesTable(categories) {
+        const tableBody = document.getElementById('categoriesTableBody');
+
+        if (categories.length === 0) {
+            tableBody.innerHTML = `
+        <tr>
+            <td colspan="4" class="text-center">No categories found</td>
+        </tr>
+    `;
+            return;
+        }
+
+        tableBody.innerHTML = categories.map(category => `
+    <tr>
+        <td>${category.id}</td>
+        <td>${category.name}</td>
+        <td>${category.description || '-'}</td>
+        <td>
+            <button class="btn btn-sm btn-primary edit-category" data-id="${category.id}" data-name="${category.name}" data-description="${category.description || ''}">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger delete-category" data-id="${category.id}">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    </tr>
+`).join('');
+
+        // Add event listeners to the new buttons
+        document.querySelectorAll('.edit-category').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const categoryData = {
+                    id: btn.dataset.id,
+                    name: btn.dataset.name,
+                    description: btn.dataset.description
+                };
+                showEditModal(categoryData);
+            });
+        });
+
+        document.querySelectorAll('.delete-category').forEach(btn => {
+            btn.addEventListener('click', () => confirmDeleteCategory(btn.dataset.id));
+        });
+    }
+
+    function showEditModal(category) {
+        // Create modal HTML
+        const modalHTML = `
+    <div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editCategoryModalLabel">Edit Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editCategoryForm">
+                        <input type="hidden" id="editCategoryId" value="${category.id}">
+                        <div class="mb-3">
+                            <label for="editCategoryName" class="form-label">Category Name *</label>
+                            <input type="text" class="form-control" id="editCategoryName" value="${category.name}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editCategoryDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editCategoryDescription" rows="3">${category.description || ''}</textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="updateCategoryBtn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+`;
+
+        // Add modal to DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Initialize modal
+        const editModal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+        editModal.show();
+
+        // Handle update button click
+        document.getElementById('updateCategoryBtn').addEventListener('click', async () => {
+            await updateCategory();
+        });
+
+        // Clean up when modal is closed
+        document.getElementById('editCategoryModal').addEventListener('hidden.bs.modal', () => {
+            document.getElementById('editCategoryModal').remove();
+        });
+    }
+
+    async function updateCategory() {
+        const token = getAuthToken();
+        if (!token) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Authentication Failed',
+                text: 'Please login again',
+            }).then(() => {
+                window.location.href = 'login.html';
+            });
+            return;
+        }
+
+        const updateBtn = document.getElementById('updateCategoryBtn');
+        const originalBtnText = updateBtn.innerHTML;
+        updateBtn.disabled = true;
+        updateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+        const categoryData = {
+            id: document.getElementById('editCategoryId').value,
+            name: document.getElementById('editCategoryName').value.trim(),
+            description: document.getElementById('editCategoryDescription').value.trim()
+        };
+
+        // Validate required fields
+        if (!categoryData.name) {
+            updateBtn.disabled = false;
+            updateBtn.innerHTML = originalBtnText;
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: 'Category name is required',
+            });
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/category/update`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(categoryData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to update category');
+            }
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('editCategoryModal')).hide();
+
+            // Show success message
+            await Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: 'Category updated successfully!',
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            // Refresh the table
+            await fetchCategories();
+
+        } catch (error) {
+            console.error('Error updating category:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Update Failed',
+                text: error.message || 'An error occurred while updating the category',
+            });
+        } finally {
+            updateBtn.disabled = false;
+            updateBtn.innerHTML = originalBtnText;
+        }
+    }
+
+    async function confirmDeleteCategory(categoryId) {
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        });
+
+        if (result.isConfirmed) {
+            await deleteCategory(categoryId);
+        }
+    }
+    document.querySelectorAll('.delete-category').forEach(btn => {
+        btn.addEventListener('click', () => deleteCategory(btn.dataset.id));
+    });
+    async function deleteCategory(categoryId) {
+        const token = getAuthToken();
+        if (!token) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Authentication Failed',
+                text: 'Please login again',
+            }).then(() => {
+                window.location.href = 'login.html';
+            });
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/category/delete/${categoryId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to delete category');
+            }
+
+            // Show success message
+            await Swal.fire({
+                icon: 'success',
+                title: 'Deleted!',
+                text: 'Category has been deleted.',
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            // Refresh the table
+            await fetchCategories();
+
+        } catch (error) {
+            console.error('Error deleting category:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Delete Failed',
+                text: error.message || 'An error occurred while deleting the category',
+            });
+        }
+    }
+
+     //The rest of your existing code remains the same...
+
+
 
     function fetchDioceses() {
-        // Mock data
         setTimeout(() => {
-            const dioceses = [
-                { id: 1, name: 'Diocese of Accra', location: 'Accra', bishop: 'Most Rev. John Smith' },
-                { id: 2, name: 'Diocese of Kumasi', location: 'Kumasi', bishop: 'Most Rev. Robert Johnson' }
-            ];
-
             const tbody = document.getElementById('diocesesTableBody');
-            tbody.innerHTML = '';
-
-            dioceses.forEach(diocese => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${diocese.id}</td>
-                    <td>${diocese.name}</td>
-                    <td>${diocese.location}</td>
-                    <td>${diocese.bishop}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1 edit-diocese" data-id="${diocese.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger delete-diocese" data-id="${diocese.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        No dioceses found
                     </td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            // Add event listeners
-            document.querySelectorAll('.edit-diocese').forEach(btn => {
-                btn.addEventListener('click', () => editDiocese(btn.dataset.id));
-            });
-
-            document.querySelectorAll('.delete-diocese').forEach(btn => {
-                btn.addEventListener('click', () => deleteDiocese(btn.dataset.id));
-            });
+                </tr>
+            `;
         }, 1000);
     }
 
     function fetchParishes() {
-        // Mock data
         setTimeout(() => {
-            const parishes = [
-                { id: 1, name: 'St. Mary', diocese: 'Diocese of Accra', location: 'Accra Central', priest: 'Fr. Michael Brown' },
-                { id: 2, name: 'St. Peter', diocese: 'Diocese of Accra', location: 'East Legon', priest: 'Fr. David Wilson' },
-                { id: 3, name: 'St. Paul', diocese: 'Diocese of Kumasi', location: 'Kumasi Central', priest: 'Fr. James Miller' }
-            ];
-
             const tbody = document.getElementById('parishesTableBody');
-            tbody.innerHTML = '';
-
-            // Populate diocese dropdown
-            const dioceseSelect = document.getElementById('parishDiocese');
-            dioceseSelect.innerHTML = '<option value="">Select Diocese</option>';
-            parishes.forEach(parish => {
-                const option = document.createElement('option');
-                option.value = parish.diocese;
-                option.textContent = parish.diocese;
-                // Avoid duplicates
-                if (!Array.from(dioceseSelect.options).some(o => o.value === parish.diocese)) {
-                    dioceseSelect.appendChild(option);
-                }
-            });
-
-            // Populate table
-            parishes.forEach(parish => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${parish.id}</td>
-                    <td>${parish.name}</td>
-                    <td>${parish.diocese}</td>
-                    <td>${parish.location}</td>
-                    <td>${parish.priest}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1 edit-parish" data-id="${parish.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger delete-parish" data-id="${parish.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        No parishes found
                     </td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            // Add event listeners
-            document.querySelectorAll('.edit-parish').forEach(btn => {
-                btn.addEventListener('click', () => editParish(btn.dataset.id));
-            });
-
-            document.querySelectorAll('.delete-parish').forEach(btn => {
-                btn.addEventListener('click', () => deleteParish(btn.dataset.id));
-            });
+                </tr>
+            `;
         }, 1000);
     }
 
@@ -1425,12 +1569,6 @@ document.addEventListener('DOMContentLoaded', function() {
         alert(`Edit category ${categoryId} functionality would go here`);
     }
 
-    function deleteCategory(categoryId) {
-        if (confirm('Are you sure you want to delete this category?')) {
-            alert(`Category ${categoryId} deleted successfully!`);
-            fetchCategories(); // Refresh the list
-        }
-    }
 
     function saveDiocese(e) {
         e.preventDefault();
@@ -1480,3 +1618,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+
+////////////////////////////////////////
+
+
+// Utility function to show loading state
+function setLoading(button, isLoading) {
+    if (isLoading) {
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+    } else {
+        button.disabled = false;
+        button.innerHTML = 'Save';
+    }
+}
+
+// Function to show success/error messages
+function showAlert(icon, title, text, timer = 1500) {
+    return Swal.fire({
+        icon: icon,
+        title: title,
+        text: text,
+        showConfirmButton: false,
+        timer: timer
+    });
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+

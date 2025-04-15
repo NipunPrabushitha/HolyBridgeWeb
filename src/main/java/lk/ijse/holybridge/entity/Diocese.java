@@ -25,7 +25,7 @@ public class Diocese{
     @JoinColumn(name = "ministry_id", nullable = false)
     private Ministry ministry;
 
-    @OneToMany(mappedBy = "diocese", cascade = {CascadeType.MERGE, CascadeType.MERGE, CascadeType.REMOVE}, orphanRemoval = true)
+    @OneToMany(mappedBy = "diocese", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Parish> parishes = new ArrayList<>();
 
     public Diocese(int uid, String name, String description, String address, String bishopName, Ministry ministry) {

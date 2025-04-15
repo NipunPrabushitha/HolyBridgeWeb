@@ -21,24 +21,20 @@ public class Category{
 
     private String description;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Event> events;
-
     public Category(int categoryId, String name, String description) {
         this.categoryId = categoryId;
         this.name = name;
         this.description = description;
     }
 
-    public Category(int categoryId, String name, String description, List<Event> events) {
-        this.categoryId = categoryId;
-        this.name = name;
-        this.description = description;
-        this.events = events;
-    }
 
     public Category() {
 
+    }
+
+    public Category(String name, String description) {
+        this.name = name;
+        this.description = description;
     }
 
     public int getCategoryId() {
@@ -65,11 +61,4 @@ public class Category{
         this.description = description;
     }
 
-    public List<Event> getEvents() {
-        return events;
-    }
-
-    public void setEvents(List<Event> events) {
-        this.events = events;
-    }
 }

@@ -29,7 +29,12 @@ public class CategoryServiceImpl implements CategoryService {
         if (categoryRepository.existsByName(categoryDTO.getName())) {
             return VarList.Not_Acceptable;
         }
-        categoryRepository.save(modelMapper.map(categoryDTO, Category.class));
+        Category category = new Category(
+                categoryDTO.getName(),
+                categoryDTO.getDescription()
+
+        );
+        categoryRepository.save(category);
         return VarList.Created;
     }
 
