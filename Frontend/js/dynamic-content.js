@@ -692,92 +692,404 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-
-    // ======================
-    // DIOCESES CONTENT
-    // ======================
-    function loadDioceses() {
+    async function loadDioceses() {
         document.title = 'HolyBridge - Diocese Management';
         mainContent.innerHTML = `
-            <div class="container-fluid">
-                <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                    <h1 class="h3 mb-0 text-gray-800">Diocese Management</h1>
-                    <button class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" id="addDioceseBtn">
-                        <i class="fas fa-plus fa-sm text-white-50"></i> Add Diocese
-                    </button>
-                </div>
-                
-                <div class="row">
-                    <div class="col-lg-4">
-                        <div class="card shadow mb-4">
-                            <div class="card-header py-3">
-                                <h6 class="m-0 font-weight-bold text-primary">Add New Diocese</h6>
-                            </div>
-                            <div class="card-body">
-                                <form id="dioceseForm">
-                                    <div class="form-group">
-                                        <label>Diocese Name</label>
-                                        <input type="text" class="form-control" id="dioceseName" required>
+    <div class="container-fluid">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Diocese Management</h1>
+            <button class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" id="addDioceseBtn">
+                <i class="fas fa-plus fa-sm text-white-50"></i> Add Diocese
+            </button>
+        </div>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">All Dioceses</h6>
+                <input type="text" class="form-control form-control-sm" style="width: 200px;" placeholder="Search..." id="dioceseSearch">
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Address</th>
+                                <th>Bishop</th>
+                                <th>Ministry</th>
+                            </tr>
+                        </thead>
+                        <tbody id="diocesesTableBody">
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="sr-only">Loading...</span>
                                     </div>
-                                    <div class="form-group">
-                                        <label>Location</label>
-                                        <input type="text" class="form-control" id="dioceseLocation">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Bishop</label>
-                                        <input type="text" class="form-control" id="dioceseBishop">
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Save Diocese</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-8">
-                        <div class="card shadow mb-4">
-                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                                <h6 class="m-0 font-weight-bold text-primary">All Dioceses</h6>
-                                <input type="text" class="form-control form-control-sm" style="width: 200px;" placeholder="Search dioceses..." id="dioceseSearch">
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-bordered" id="diocesesTable" width="100%" cellspacing="0">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Name</th>
-                                                <th>Location</th>
-                                                <th>Bishop</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="diocesesTableBody">
-                                            <tr>
-                                                <td colspan="5" class="text-center">
-                                                    <div class="spinner-border text-primary" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        `;
+        </div>
+    </div>
+    `;
 
-        // Load dioceses data
+        // Load initial data
         fetchDioceses();
 
-        // Add event listeners
-        document.getElementById('dioceseForm')?.addEventListener('submit', saveDiocese);
+        // Set up event listeners
+        document.getElementById('addDioceseBtn')?.addEventListener('click', () => showDioceseEditModal(null));
         document.getElementById('dioceseSearch')?.addEventListener('input', searchDioceses);
     }
+
+    async function fetchDioceses() {
+        const token = getAuthToken();
+        if (!token) {
+            console.error('No authentication token found');
+            return;
+        }
+
+        const tableBody = document.getElementById('diocesesTableBody');
+        tableBody.innerHTML = `
+    <tr>
+        <td colspan="7" class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </td>
+    </tr>
+    `;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/diocese/getAll`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch dioceses');
+            }
+
+            const dioceses = await response.json();
+            renderDiocesesTable(dioceses);
+        } catch (error) {
+            console.error('Error fetching dioceses:', error);
+            tableBody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center text-danger">
+                Error loading dioceses: ${error.message}
+            </td>
+        </tr>
+        `;
+        }
+    }
+
+    function renderDiocesesTable(dioceses) {
+        const tableBody = document.getElementById('diocesesTableBody');
+
+        if (dioceses.length === 0) {
+            tableBody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center">No dioceses found</td>
+        </tr>
+        `;
+            return;
+        }
+
+        tableBody.innerHTML = dioceses.map(diocese => `
+    <tr>
+        <td>${diocese.id}</td>
+        <td>${diocese.name}</td>
+        <td>${diocese.description || '-'}</td>
+        <td>${diocese.address || '-'}</td>
+        <td>${diocese.bishopName || '-'}</td>
+        <td>
+            <button class="btn btn-sm btn-primary edit-diocese" 
+                data-id="${diocese.id}" 
+                data-name="${diocese.name}" 
+                data-description="${diocese.description || ''}"
+                data-address="${diocese.address || ''}"
+                data-bishop="${diocese.bishopName || ''}">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger delete-diocese" data-id="${diocese.id}">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    </tr>
+    `).join('');
+
+        // Add event listeners to the new buttons
+        document.querySelectorAll('.edit-diocese').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const dioceseData = {
+                    id: btn.dataset.id,
+                    name: btn.dataset.name,
+                    description: btn.dataset.description,
+                    address: btn.dataset.address,
+                    bishopName: btn.dataset.bishop
+                };
+                showDioceseEditModal(dioceseData);
+            });
+        });
+
+        document.querySelectorAll('.delete-diocese').forEach(btn => {
+            btn.addEventListener('click', () => confirmDeleteDiocese(btn.dataset.id));
+        });
+    }
+
+    function showDioceseEditModal(diocese) {
+        // Create modal HTML
+        const isNew = diocese === null;
+        const modalTitle = isNew ? 'Add New Diocese' : 'Edit Diocese';
+
+        const modalHTML = `
+    <div class="modal fade" id="editDioceseModal" tabindex="-1" aria-labelledby="editDioceseModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editDioceseModalLabel">${modalTitle}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="dioceseForm">
+                        <input type="hidden" id="dioceseId" value="${diocese?.id || ''}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dioceseName" class="form-label">Diocese Name *</label>
+                                    <input type="text" class="form-control" id="dioceseName" 
+                                        value="${diocese?.name || ''}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="dioceseDescription" class="form-label">Description</label>
+                                    <textarea class="form-control" id="dioceseDescription" rows="3">${diocese?.description || ''}</textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dioceseAddress" class="form-label">Address *</label>
+                                    <textarea class="form-control" id="dioceseAddress" rows="3" required>${diocese?.address || ''}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="bishopName" class="form-label">Bishop Name</label>
+                                    <input type="text" class="form-control" id="bishopName" 
+                                        value="${diocese?.bishopName || ''}">
+                                </div>
+                                <input type="hidden" id="ministryId" value="1"> <!-- Hardcoded ministry ID -->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveDioceseBtn">
+                        ${isNew ? 'Create' : 'Save Changes'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+
+        // Add modal to DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Initialize modal
+        const editModal = new bootstrap.Modal(document.getElementById('editDioceseModal'));
+        editModal.show();
+
+        // Handle save button click
+        document.getElementById('saveDioceseBtn').addEventListener('click', async () => {
+            await saveDiocese();
+        });
+
+        // Clean up when modal is closed
+        document.getElementById('editDioceseModal').addEventListener('hidden.bs.modal', () => {
+            document.getElementById('editDioceseModal').remove();
+        });
+    }
+
+    async function saveDiocese() {
+        const token = getAuthToken();
+        if (!token) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Authentication Failed',
+                text: 'Please login again',
+            }).then(() => {
+                window.location.href = 'login.html';
+            });
+            return;
+        }
+
+        const saveBtn = document.getElementById('saveDioceseBtn');
+        const originalBtnText = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+        const dioceseData = {
+            id: document.getElementById('dioceseId').value,
+            name: document.getElementById('dioceseName').value.trim(),
+            description: document.getElementById('dioceseDescription').value.trim(),
+            address: document.getElementById('dioceseAddress').value.trim(),
+            bishopName: document.getElementById('bishopName').value.trim(),
+            ministry: { id: 1 } // Hardcoded ministry ID
+        };
+
+        // Validate required fields
+        if (!dioceseData.name || !dioceseData.address) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnText;
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: 'Diocese name and address are required',
+            });
+            return;
+        }
+
+        try {
+            const isUpdate = dioceseData.id !== '';
+            const url = `${API_BASE_URL}/diocese/${isUpdate ? 'update' : 'save'}`;
+            const method = isUpdate ? 'PUT' : 'POST';
+
+            if (isUpdate) {
+                dioceseData.id = parseInt(dioceseData.id);
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(dioceseData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Failed to ${isUpdate ? 'update' : 'create'} diocese`);
+            }
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('editDioceseModal')).hide();
+
+            // Show success message
+            await Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: `Diocese ${isUpdate ? 'updated' : 'created'} successfully!`,
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            // Refresh the table
+            await fetchDioceses();
+
+        } catch (error) {
+            console.error('Error saving diocese:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Operation Failed',
+                text: error.message || 'An error occurred while saving the diocese',
+            });
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnText;
+        }
+    }
+
+    async function confirmDeleteDiocese(dioceseId) {
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        });
+
+        if (result.isConfirmed) {
+            await deleteDiocese(dioceseId);
+        }
+    }
+
+    async function deleteDiocese(dioceseId) {
+        const token = getAuthToken();
+        if (!token) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Authentication Failed',
+                text: 'Please login again',
+            }).then(() => {
+                window.location.href = 'login.html';
+            });
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/diocese/delete/${dioceseId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to delete diocese');
+            }
+
+            // Show success message
+            await Swal.fire({
+                icon: 'success',
+                title: 'Deleted!',
+                text: 'Diocese has been deleted.',
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            // Refresh the table
+            await fetchDioceses();
+
+        } catch (error) {
+            console.error('Error deleting diocese:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Delete Failed',
+                text: error.message || 'An error occurred while deleting the diocese',
+            });
+        }
+    }
+
+    function searchDioceses() {
+        const searchTerm = document.getElementById('dioceseSearch').value.toLowerCase();
+        const rows = document.querySelectorAll('#diocesesTableBody tr');
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    }
+
+
+
+
+
+
+
+
+
 
     // ======================
     // PARISHES CONTENT
@@ -1395,7 +1707,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    function fetchDioceses() {
+   /* function fetchDioceses() {
         setTimeout(() => {
             const tbody = document.getElementById('diocesesTableBody');
             tbody.innerHTML = `
@@ -1406,7 +1718,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>
             `;
         }, 1000);
-    }
+    }*/
 
     function fetchParishes() {
         setTimeout(() => {
@@ -1567,31 +1879,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function editCategory(categoryId) {
         alert(`Edit category ${categoryId} functionality would go here`);
-    }
-
-
-    function saveDiocese(e) {
-        e.preventDefault();
-        // In a real app, this would save to your backend
-        alert('Diocese saved successfully!');
-        fetchDioceses(); // Refresh the list
-    }
-
-    function searchDioceses() {
-        const searchTerm = document.getElementById('dioceseSearch').value.toLowerCase();
-        alert(`Search dioceses for: ${searchTerm}`);
-        // Implement your search logic here
-    }
-
-    function editDiocese(dioceseId) {
-        alert(`Edit diocese ${dioceseId} functionality would go here`);
-    }
-
-    function deleteDiocese(dioceseId) {
-        if (confirm('Are you sure you want to delete this diocese?')) {
-            alert(`Diocese ${dioceseId} deleted successfully!`);
-            fetchDioceses(); // Refresh the list
-        }
     }
 
     function saveParish(e) {
