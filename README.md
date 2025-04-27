@@ -28,3 +28,5 @@ HolyBridge is a powerful and user-friendly Church Management System built with S
 🎯 Purpose
 
 The goal of HolyBridge is to bring digital ease and structure to churches that operate under a common network
+
+🧰 Demo Video :- https://drive.google.com/drive/folders/1G1nwgOKCFjhUBRJAl7j38tANy_BoMJqh?usp=sharing
