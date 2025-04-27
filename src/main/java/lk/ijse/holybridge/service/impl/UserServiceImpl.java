@@ -1,12 +1,12 @@
 package lk.ijse.holybridge.service.impl;
 
-
 import lk.ijse.holybridge.dto.UserDTO;
 import lk.ijse.holybridge.entity.User;
 import lk.ijse.holybridge.repo.UserRepository;
 import lk.ijse.holybridge.service.UserService;
 import lk.ijse.holybridge.util.VarList;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,8 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-
 
 @Service
 @Transactional
@@ -33,12 +33,15 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email);
-        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), getAuthority(user));
+        return new org.springframework.security.core.userdetails.User(
+                user.getEmail(),
+                user.getPassword(),
+                getAuthority(user));
     }
 
     public UserDTO loadUserDetailsByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(username);
-        return modelMapper.map(user,UserDTO.class);
+        return modelMapper.map(user, UserDTO.class);
     }
 
     private Set<SimpleGrantedAuthority> getAuthority(User user) {
@@ -50,8 +53,8 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public UserDTO searchUser(String username) {
         if (userRepository.existsByEmail(username)) {
-            User user=userRepository.findByEmail(username);
-            return modelMapper.map(user,UserDTO.class);
+            User user = userRepository.findByEmail(username);
+            return modelMapper.map(user, UserDTO.class);
         } else {
             return null;
         }
@@ -64,8 +67,14 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         } else {
             BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
             userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-            //userDTO.setRole("USER");
             userRepository.save(modelMapper.map(userDTO, User.class));
             return VarList.Created;
         }
-    }}
+    }
+
+    @Override
+    public List<UserDTO> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return modelMapper.map(users, new TypeToken<List<UserDTO>>(){}.getType());
+    }
+}

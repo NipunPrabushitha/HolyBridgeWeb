@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @CrossOrigin("*")
@@ -58,5 +59,15 @@ public class DioceseController {
     @GetMapping("/getAll")
     public ResponseEntity<List<DioceseDTO>> getAllDioceses() {
         return ResponseEntity.ok(dioceseService.getAllDioceses());
+    }
+    @GetMapping("/get/{id}")
+    public ResponseEntity<ResponseDTO> getDioceseById(@PathVariable int id) {
+        Optional<DioceseDTO> dioceseDTO = dioceseService.getDioceseById(id);
+        if (dioceseDTO.isPresent()) {
+            return ResponseEntity.ok(new ResponseDTO(VarList.OK, "Success", dioceseDTO.get()));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseDTO(VarList.Not_Found, "Diocese Not Found", null));
+        }
     }
 }

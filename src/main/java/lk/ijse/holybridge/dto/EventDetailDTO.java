@@ -1,17 +1,51 @@
 package lk.ijse.holybridge.dto;
 
-import lk.ijse.holybridge.entity.Event;
-import lk.ijse.holybridge.entity.EventFacility;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@AllArgsConstructor
-@NoArgsConstructor
-@Data
-
 public class EventDetailDTO {
+    private int eventDetailId;
     private int quantity;
-    private EventFacility eventFacility;
-    private Event event;
+    private EventFacilityDTO eventFacility;
+    private EventDTO event;
+
+    // Constructors, Getters and Setters
+    public EventDetailDTO() {
+    }
+
+    public EventDetailDTO(int eventDetailId, int quantity, EventFacilityDTO eventFacility, EventDTO event) {
+        this.eventDetailId = eventDetailId;
+        this.quantity = quantity;
+        this.eventFacility = eventFacility;
+        this.event = event;
+    }
+
+    public int getEventDetailId() {
+        return eventDetailId;
+    }
+
+    public void setEventDetailId(int eventDetailId) {
+        this.eventDetailId = eventDetailId;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public EventFacilityDTO getEventFacility() {
+        return eventFacility;
+    }
+
+    public void setEventFacility(EventFacilityDTO eventFacility) {
+        this.eventFacility = eventFacility;
+    }
+
+    public EventDTO getEvent() {
+        return event;
+    }
+
+    public void setEvent(EventDTO event) {
+        this.event = event;
+    }
 }

@@ -229,18 +229,18 @@
         </div>
 
         <div class="sidebar-item">
-            <a href="#reports" class="sidebar-link">
+            <a href="#eventFacilities" class="sidebar-link">
                 <i class="fas fa-fw fa-chart-bar"></i>
-                <span>Reports</span>
+                <span>Event Facilities</span>
             </a>
         </div>
 
-        <div class="sidebar-item">
+        <!--<div class="sidebar-item">
             <a href="#settings" class="sidebar-link">
-                <i class="fas fa-fw fa-cog"></i>
+                <i class="fas fa-fw fa-university"></i>
                 <span>Settings</span>
             </a>
-        </div>
+        </div>-->
     </div>
 
     <!-- Main Content -->
@@ -252,7 +252,7 @@
             </button>
 
             <!-- Topbar Navbar -->
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav ms-auto align-items-center">
                 <!-- Theme Toggle -->
                 <li class="nav-item">
                     <div class="theme-toggle" id="themeToggle">
@@ -260,39 +260,56 @@
                     </div>
                 </li>
 
-                <!-- Nav Item - User Information -->
-                <li class="nav-item dropdown no-arrow">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                        <div class="user-dropdown">
-                            <span class="me-2 d-none d-lg-inline text-gray-600" id="adminEmail"></span>
-                            <span class="badge bg-primary me-2" id="userRoleBadge">Admin</span>
-                            <img class="img-profile rounded-circle" src="https://source.unsplash.com/QAB-WJcbgJk/60x60" width="32" height="32">
-                        </div>
-                    </a>
-                    <!-- Dropdown - User Information -->
-                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                        <div class="dropdown-header d-flex align-items-center">
-                            <img class="img-profile rounded-circle mr-2" src="https://source.unsplash.com/QAB-WJcbgJk/60x60" width="40" height="40">
-                            <div>
-                                <div class="fw-bold" id="dropdownUserName">Admin User</div>
-                                <div class="small text-muted" id="dropdownUserEmail"></div>
-                                <div class="small text-muted" id="dropdownUserRole"></div>
-                            </div>
-                        </div>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="profile.html">
-                            <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Profile
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#" id="logoutBtn">
-                            <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Logout
-                        </a>
+                <!-- User Information -->
+                <li class="nav-item no-arrow mx-2">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2 d-none d-lg-inline text-gray-600" id="adminEmail"></span>
+                        <span class="badge bg-primary me-2" id="userRoleBadge">Admin</span>
+                        <img class="img-profile rounded-circle" src="https://source.unsplash.com/QAB-WJcbgJk/60x60" width="32" height="32">
                     </div>
+                </li>
+
+                <!-- Logout Button -->
+                <li class="nav-item no-arrow">
+                    <button class="btn btn-primary ms-2" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-1"></i>
+                        Logout
+                    </button>
                 </li>
             </ul>
         </nav>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const logoutBtn = document.getElementById('logoutBtn');
+
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+
+                        // Show confirmation dialog
+                        Swal.fire({
+                            title: 'Logout Confirmation',
+                            text: 'Are you sure you want to logout?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Yes, logout!'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Clear any user data from storage
+                                localStorage.removeItem('authToken');
+                                localStorage.removeItem('userData');
+
+                                // Redirect to login page
+                                window.location.href = 'login.html';
+                            }
+                        });
+                    });
+                }
+            });
+        </script>
 
         <!-- Begin Page Content -->
         <div class="container-fluid" id="main-content">

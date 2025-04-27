@@ -9,7 +9,7 @@ public class MemberDTO {
     private String address;
     private String contactNumber;
     private String gender;
-    private String imagepath;
+    private String imagepath; 
     private LocalDate dateOfBirth;
     private ParishDTO parishDTO;
 

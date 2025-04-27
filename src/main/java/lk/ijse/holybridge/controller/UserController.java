@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @CrossOrigin("*")
 @RequestMapping("api/v1/user")
@@ -18,11 +20,11 @@ public class UserController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
-    //constructor injection
     public UserController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
     }
+
     @PostMapping(value = "/register")
     public ResponseEntity<ResponseDTO> registerUser(@RequestBody @Valid UserDTO userDTO) {
         try {
@@ -45,6 +47,18 @@ public class UserController {
                             .body(new ResponseDTO(VarList.Bad_Gateway, "Error", null));
                 }
             }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseDTO(VarList.Internal_Server_Error, e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<ResponseDTO> getAllUsers() {
+        try {
+            List<UserDTO> users = userService.getAllUsers();
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseDTO(VarList.OK, "Success", users));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ResponseDTO(VarList.Internal_Server_Error, e.getMessage(), null));

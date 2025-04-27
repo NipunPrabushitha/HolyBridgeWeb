@@ -109,4 +109,22 @@ public class DioceseServiceImpl implements DioceseService {
                 )
         )).collect(Collectors.toList());
     }
+
+    @Override
+    public Optional<DioceseDTO> getDioceseById(int id) {
+        return dioceseRepository.findByUid(id)
+                .map(diocese -> new DioceseDTO(
+                        diocese.getUid(),
+                        diocese.getName(),
+                        diocese.getDescription(),
+                        diocese.getAddress(),
+                        diocese.getBishopName(),
+                        new MinistryDTO(
+                                diocese.getMinistry().getMinistry_id(),
+                                diocese.getMinistry().getName(),
+                                diocese.getMinistry().getDescription(),
+                                diocese.getMinistry().getAddress()
+                        )
+                ));
+    }
 }

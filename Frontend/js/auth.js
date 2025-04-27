@@ -1,6 +1,48 @@
 // Base API URL
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
+
+
+// auth.js
+document.addEventListener('DOMContentLoaded', function() {
+    // Logout functionality
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            logoutUser();
+        });
+    }
+
+    // Function to handle logout
+    function logoutUser() {
+        // Show confirmation dialog
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will be logged out of the system.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, logout!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // In a real app, you might want to:
+                // 1. Send a logout request to your backend API
+                // 2. Clear any authentication tokens from localStorage/sessionStorage
+
+                // Clear any stored user data (example)
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userData');
+
+                // Redirect to login page
+                window.location.href = 'login.html';
+            }
+        });
+    }
+});
+
 // Improved getAuthToken function with better redirect handling
 function getAuthToken() {
     const token = localStorage.getItem('token');
@@ -12,7 +54,7 @@ function getAuthToken() {
     }
 
     // If token doesn't exist and we're on a protected page, redirect to login
-    if (!token && (window.location.pathname.includes('dashboard.html') ||
+    if (!token && (window.location.pathname.includes('user.html') ||
         window.location.pathname.includes('admin.html'))) {
         console.log("No token found, redirecting to login");
         window.location.href = 'login.html';
@@ -65,14 +107,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check if we're on the correct page based on role
         const onAdminPage = window.location.pathname.includes('admin.html');
-        const onDashboardPage = window.location.pathname.includes('dashboard.html');
+        const onDashboardPage = window.location.pathname.includes('user.html');
 
         // Redirect if on wrong page (with delay to prevent multiple redirects)
         setTimeout(() => {
             if (userRole === 'admin' && !onAdminPage) {
                 window.location.href = 'admin.html';
             } else if (userRole === 'user' && !onDashboardPage) {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'user.html';
             }
         }, 100);
     }
@@ -130,7 +172,7 @@ if (loginForm) {
 
                     // Redirect based on role after a brief delay
                     setTimeout(() => {
-                        window.location.href = role === 'admin' ? 'admin.html' : 'dashboard.html';
+                        window.location.href = role === 'admin' ? 'admin.html' : 'user.html';
                     }, 300);
                 } catch (parseError) {
                     console.error('Token parse error:', parseError);
